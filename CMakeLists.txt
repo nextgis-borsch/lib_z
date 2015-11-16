@@ -14,6 +14,8 @@ set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "Installation d
 set(INSTALL_MAN_DIR "${CMAKE_INSTALL_PREFIX}/share/man" CACHE PATH "Installation directory for manual pages")
 set(INSTALL_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/share/pkgconfig" CACHE PATH "Installation directory for pkgconfig (.pc) files")
 
+option(BUILD_SHARED_LIBS  "Build shared libs." ON)
+
 include(CheckTypeSize)
 include(CheckFunctionExists)
 include(CheckIncludeFile)
