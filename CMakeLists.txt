@@ -244,4 +244,4 @@ if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
 endif()
 
 export(TARGETS zlib
-  FILE "${ZLIB_BINARY_DIR}/ZLIBTargets.cmake")
+  FILE "${CMAKE_BINARY_DIR}/ZLIBTargets.cmake")
