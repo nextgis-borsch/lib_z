@@ -205,16 +205,20 @@ if(NOT CYGWIN)
     set_target_properties(zlib PROPERTIES VERSION ${ZLIB_FULL_VERSION})
 endif()
 
+
+set(LIB_NAME)
 if(UNIX)
     # On unix-like platforms the library is almost always called libz
-    if(BUILD_SHARED_LIBS) 
-        set_target_properties(zlib PROPERTIES OUTPUT_NAME z)
-    else()    
-        set_target_properties(zlibstatic PROPERTIES OUTPUT_NAME z)
+    if(BUILD_SHARED_LIBS)
+      set(LIB_NAME zlib)
+      set_target_properties(zlib PROPERTIES OUTPUT_NAME z)
+    else()
+      set(LIB_NAME zlibstatic)
+      set_target_properties(zlibstatic PROPERTIES OUTPUT_NAME z)
     endif()
-   if(NOT APPLE)
-     set_target_properties(zlib PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${CMAKE_CURRENT_SOURCE_DIR}/zlib.map\"")
-   endif()
+    if(NOT APPLE)
+      set_target_properties(zlib PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${CMAKE_CURRENT_SOURCE_DIR}/zlib.map\"")
+    endif()
 elseif(BUILD_SHARED_LIBS AND WIN32)
     # Creates zlib1.dll when building shared library version
     set_target_properties(zlib PROPERTIES SUFFIX "1.dll")
@@ -264,7 +268,7 @@ foreach(p LIB BIN INCLUDE CMAKE)
 endforeach()
 
 
-export(TARGETS zlib
+export(TARGETS ${LIB_NAME}
   FILE "${CMAKE_BINARY_DIR}/ZLIBTargets.cmake")
 
 # Create the ZLIBConfig.cmake and ZLIBConfigVersion files
