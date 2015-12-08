@@ -7,4 +7,11 @@ if(NOT TARGET foo AND NOT ZLIB_BINARY_DIR)
   include("${ZLIB_CMAKE_DIR}/ZLIBTargets.cmake")
 endif()
 
-set(ZLIB_LIBRARY zlib)
+set(ZLIB_NAMES zlib)
+set(ZLIB_LIBRARY)
+foreach(ZLIB_NAME ${ZLIB_NAMES}) 
+  get_target_property(ZLIB_LIB_FILENAME ${ZLIB_NAME} IMPORTED_LOCATION_NOCONFIG)
+  list(APPEND ZLIB_LIBRARY ${ZLIB_LIB_FILENAME})
+endforeach()
+
+
