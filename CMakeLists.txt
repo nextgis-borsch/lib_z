@@ -265,7 +265,7 @@ endforeach()
 
 
 export(TARGETS zlib
-  FILE "${CMAKE_BINARY_DIR}/zlibTargets.cmake")
+  FILE "${CMAKE_BINARY_DIR}/ZLIBTargets.cmake")
 
 # Create the ZLIBConfig.cmake and ZLIBConfigVersion files
 file(RELATIVE_PATH REL_INCLUDE_DIR "${INSTALL_CMAKE_DIR}"
