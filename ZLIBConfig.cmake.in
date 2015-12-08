@@ -1,0 +1,10 @@
+# Compute paths
+get_filename_component(ZLIB_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+set(ZLIB_INCLUDE_DIRS "@CONF_INCLUDE_DIRS@")
+ 
+# Our library dependencies (contains definitions for IMPORTED targets)
+if(NOT TARGET foo AND NOT ZLIB_BINARY_DIR)
+  include("${ZLIB_CMAKE_DIR}/ZLIBTargets.cmake")
+endif()
+
+set(ZLIB_LIBRARIES zlib)

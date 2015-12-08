@@ -222,15 +222,16 @@ endif()
 
 if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
     if(BUILD_SHARED_LIBS) 
-        install(TARGETS zlib 
-            RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
-            ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
-            LIBRARY DESTINATION "${INSTALL_LIB_DIR}" )
+      install(TARGETS zlib
+        EXPORT ZLIBTargets
+        RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
+        ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
+        LIBRARY DESTINATION "${INSTALL_LIB_DIR}" )
     else()
-        install(TARGETS zlibstatic
-            RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
-            ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
-            LIBRARY DESTINATION "${INSTALL_LIB_DIR}" )
+      install(TARGETS zlibstatic
+        RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
+        ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
+        LIBRARY DESTINATION "${INSTALL_LIB_DIR}" )
     endif()
 endif()
 if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
@@ -243,5 +244,51 @@ if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
     install(FILES ${ZLIB_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
 endif()
 
+
+set(ZLIB_VERSION ${VERSION})
+
+if(WIN32 AND NOT CYGWIN)
+  set(DEF_INSTALL_CMAKE_DIR CMake)
+else()
+  set(DEF_INSTALL_CMAKE_DIR lib/CMake/ZLIB)
+endif()
+set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
+  "Installation directory for CMake files")
+ 
+# Make relative paths absolute (needed later on)
+foreach(p LIB BIN INCLUDE CMAKE)
+  set(var INSTALL_${p}_DIR)
+  if(NOT IS_ABSOLUTE "${${var}}")
+    set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
+  endif()
+endforeach()
+
+
 export(TARGETS zlib
   FILE "${CMAKE_BINARY_DIR}/zlibTargets.cmake")
+
+# Create the ZLIBConfig.cmake and ZLIBConfigVersion files
+file(RELATIVE_PATH REL_INCLUDE_DIR "${INSTALL_CMAKE_DIR}"
+  "${INSTALL_INC_DIR}")
+
+# ... for the build tree
+set(CONF_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}")
+configure_file(ZLIBConfig.cmake.in
+  "${PROJECT_BINARY_DIR}/ZLIBConfig.cmake" @ONLY)
+
+# ... for the install tree
+set(CONF_INCLUDE_DIRS "\${ZLIB_CMAKE_DIR}/${REL_INCLUDE_DIR}")
+configure_file(ZLIBConfig.cmake.in
+  "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/ZLIBConfig.cmake" @ONLY)
+# ... for both
+configure_file(ZLIBConfigVersion.cmake.in
+  "${CMAKE_BINARY_DIR}/ZLIBConfigVersion.cmake" @ONLY)
+ 
+# Install the ZLIBConfig.cmake and ZLIBConfigVersion.cmake
+install(FILES
+  "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/ZLIBConfig.cmake"
+  "${CMAKE_BINARY_DIR}/ZLIBConfigVersion.cmake"
+  DESTINATION "${INSTALL_CMAKE_DIR}" )
+ 
+# Install the export set for use with the install-tree
+install(EXPORT ZLIBTargets DESTINATION "${INSTALL_CMAKE_DIR}")
