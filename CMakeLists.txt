@@ -189,6 +189,7 @@ if(BUILD_SHARED_LIBS)
     add_library(zlib SHARED ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
 else()    
     add_library(zlibstatic STATIC ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+    export(TARGETS zlibstatic FILE zlibstatic-exports.cmake)
 endif()    
 
 set_target_properties(zlib PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
