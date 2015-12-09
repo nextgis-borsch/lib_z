@@ -195,11 +195,11 @@ set_target_properties(zlib PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
 set_target_properties(zlib PROPERTIES SOVERSION 1)
 
 # todo: do we need some univesal cmake file for this?
-#if(BUILD_SHARED_LIBS)
+if(BUILD_SHARED_LIBS)
     export(TARGETS zlib FILE zlib-exports.cmake)
-#else()
+else()
     export(TARGETS zlibstatic FILE zlibstatic-exports.cmake)
-#endif()
+endif()
 
 if(NOT CYGWIN)
     # This property causes shared libraries on Linux to have the full version
