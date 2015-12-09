@@ -14,8 +14,6 @@ set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "Installation d
 set(INSTALL_MAN_DIR "${CMAKE_INSTALL_PREFIX}/share/man" CACHE PATH "Installation directory for manual pages")
 set(INSTALL_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/share/pkgconfig" CACHE PATH "Installation directory for pkgconfig (.pc) files")
 
-option(BUILD_SHARED_LIBS  "Build shared libs." ON)
-
 include(CheckTypeSize)
 include(CheckFunctionExists)
 include(CheckIncludeFile)
@@ -186,19 +184,21 @@ if(MINGW)
 endif(MINGW)
 
 if(BUILD_SHARED_LIBS)
-    add_library(zlib SHARED ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+    set(LIB_NAME zlib)
+    add_library(${LIB_NAME} SHARED ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+    set_target_properties(${LIB_NAME} PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
+    set_target_properties(${LIB_NAME} PROPERTIES SOVERSION 1)
 else()    
-    add_library(zlibstatic STATIC ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+    set(LIB_NAME zlibstatic)
+    add_library(${LIB_NAME} STATIC ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+    set_target_properties(${LIB_NAME} PROPERTIES SOVERSION 1)
 endif()    
-
-set_target_properties(zlib PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
-set_target_properties(zlib PROPERTIES SOVERSION 1)
 
 # todo: do we need some univesal cmake file for this?
 if(BUILD_SHARED_LIBS)
-    export(TARGETS zlib FILE zlib-exports.cmake)
+    export(TARGETS ${LIB_NAME} FILE zlib-exports.cmake)
 else()
-    export(TARGETS zlibstatic FILE zlibstatic-exports.cmake)
+    export(TARGETS ${LIB_NAME} FILE zlibstatic-exports.cmake)
 endif()
 
 if(NOT CYGWIN)
@@ -209,36 +209,25 @@ if(NOT CYGWIN)
     #
     # This has no effect with MSVC, on that platform the version info for
     # the DLL comes from the resource file win32/zlib1.rc
-    set_target_properties(zlib PROPERTIES VERSION ${ZLIB_FULL_VERSION})
+    set_target_properties(${LIB_NAME} PROPERTIES VERSION ${ZLIB_FULL_VERSION})
 endif()
 
 if(UNIX)
     # On unix-like platforms the library is almost always called libz
-    if(BUILD_SHARED_LIBS) 
-        set_target_properties(zlib PROPERTIES OUTPUT_NAME z)
-    else()    
-        set_target_properties(zlibstatic PROPERTIES OUTPUT_NAME z)
+    set_target_properties(${LIB_NAME} PROPERTIES OUTPUT_NAME z)
+    if(NOT APPLE AND BUILD_SHARED_LIBS)
+        set_target_properties(zlib PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${CMAKE_CURRENT_SOURCE_DIR}/zlib.map\"")
     endif()
-   if(NOT APPLE)
-     set_target_properties(zlib PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${CMAKE_CURRENT_SOURCE_DIR}/zlib.map\"")
-   endif()
 elseif(BUILD_SHARED_LIBS AND WIN32)
     # Creates zlib1.dll when building shared library version
     set_target_properties(zlib PROPERTIES SUFFIX "1.dll")
 endif()
 
 if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
-    if(BUILD_SHARED_LIBS) 
-        install(TARGETS zlib 
-            RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
-            ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
-            LIBRARY DESTINATION "${INSTALL_LIB_DIR}" )
-    else()
-        install(TARGETS zlibstatic
-            RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
-            ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
-            LIBRARY DESTINATION "${INSTALL_LIB_DIR}" )
-    endif()
+    install(TARGETS ${LIB_NAME} 
+        RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
+        ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
+        LIBRARY DESTINATION "${INSTALL_LIB_DIR}" )
 endif()
 if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
     install(FILES ${ZLIB_PUBLIC_HDRS} DESTINATION "${INSTALL_INC_DIR}")
