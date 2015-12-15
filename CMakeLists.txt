@@ -14,6 +14,9 @@ set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "Installation d
 set(INSTALL_MAN_DIR "${CMAKE_INSTALL_PREFIX}/share/man" CACHE PATH "Installation directory for manual pages")
 set(INSTALL_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/share/pkgconfig" CACHE PATH "Installation directory for pkgconfig (.pc) files")
 
+# set path to additional CMake modules
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
+
 include(CheckTypeSize)
 include(CheckFunctionExists)
 include(CheckIncludeFile)
@@ -79,12 +82,13 @@ if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
 endif()
 
 set(ZLIB_PC ${CMAKE_CURRENT_BINARY_DIR}/zlib.pc)
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/zlib.pc.cmakein
+configure_file( ${CMAKE_MODULE_PATH}/zlib.pc.cmakein
 		${ZLIB_PC} @ONLY)
-configure_file(	${CMAKE_CURRENT_SOURCE_DIR}/zconf.h.cmakein
+configure_file(	${CMAKE_MODULE_PATH}/zconf.h.cmakein
 		${CMAKE_CURRENT_BINARY_DIR}/zconf.h @ONLY)
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 
+configure_file(${CMAKE_MODULE_PATH}/cmake_uninstall.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake IMMEDIATE @ONLY)
 
 #============================================================================
 # zlib
@@ -166,6 +170,8 @@ endif()
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/zlib.h _zlib_h_contents)
 string(REGEX REPLACE ".*#define[ \t]+ZLIB_VERSION[ \t]+\"([-0-9A-Za-z.]+)\".*"
     "\\1" ZLIB_FULL_VERSION ${_zlib_h_contents})
+    
+message(STATUS "libz version ${ZLIB_FULL_VERSION}")     
 
 if(MINGW)
     # This gets us DLL resource information when compiling on MinGW.
@@ -195,11 +201,8 @@ else()
 endif()    
 
 # todo: do we need some univesal cmake file for this?
-if(BUILD_SHARED_LIBS)
-    export(TARGETS ${LIB_NAME} FILE zlib-exports.cmake)
-else()
-    export(TARGETS ${LIB_NAME} FILE zlibstatic-exports.cmake)
-endif()
+export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake)
+add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 
 if(NOT CYGWIN)
     # This property causes shared libraries on Linux to have the full version
@@ -216,11 +219,11 @@ if(UNIX)
     # On unix-like platforms the library is almost always called libz
     set_target_properties(${LIB_NAME} PROPERTIES OUTPUT_NAME z)
     if(NOT APPLE AND BUILD_SHARED_LIBS)
-        set_target_properties(zlib PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${CMAKE_CURRENT_SOURCE_DIR}/zlib.map\"")
+        set_target_properties(${LIB_NAME} PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${CMAKE_CURRENT_SOURCE_DIR}/zlib.map\"")
     endif()
 elseif(BUILD_SHARED_LIBS AND WIN32)
     # Creates zlib1.dll when building shared library version
-    set_target_properties(zlib PROPERTIES SUFFIX "1.dll")
+    set_target_properties(${LIB_NAME} PROPERTIES SUFFIX "1.dll")
 endif()
 
 if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
