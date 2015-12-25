@@ -173,7 +173,7 @@ string(REGEX REPLACE ".*#define[ \t]+ZLIB_VERSION[ \t]+\"([-0-9A-Za-z.]+)\".*"
     
  
 include(util)
-report_version(libz ${ZLIB_FULL_VERSION})    
+report_version(${PROJECT_NAME} ${ZLIB_FULL_VERSION})    
 
 if(MINGW)
     # This gets us DLL resource information when compiling on MinGW.
