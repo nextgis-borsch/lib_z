@@ -14,7 +14,8 @@ set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "Installation d
 set(INSTALL_MAN_DIR "${CMAKE_INSTALL_PREFIX}/share/man" CACHE PATH "Installation directory for manual pages")
 set(INSTALL_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/share/pkgconfig" CACHE PATH "Installation directory for pkgconfig (.pc) files")
 
-option(BUILD_SHARED_LIBS  "Build shared libs." ON)
+# set path to additional CMake modules
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
 include(CheckTypeSize)
 include(CheckFunctionExists)
@@ -81,12 +82,13 @@ if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
 endif()
 
 set(ZLIB_PC ${CMAKE_CURRENT_BINARY_DIR}/zlib.pc)
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/zlib.pc.cmakein
+configure_file( ${CMAKE_MODULE_PATH}/zlib.pc.cmakein
 		${ZLIB_PC} @ONLY)
-configure_file(	${CMAKE_CURRENT_SOURCE_DIR}/zconf.h.cmakein
+configure_file(	${CMAKE_MODULE_PATH}/zconf.h.cmakein
 		${CMAKE_CURRENT_BINARY_DIR}/zconf.h @ONLY)
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 
+configure_file(${CMAKE_MODULE_PATH}/cmake_uninstall.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake IMMEDIATE @ONLY)
 
 #============================================================================
 # zlib
@@ -168,10 +170,10 @@ endif()
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/zlib.h _zlib_h_contents)
 string(REGEX REPLACE ".*#define[ \t]+ZLIB_VERSION[ \t]+\"([-0-9A-Za-z.]+)\".*"
     "\\1" ZLIB_FULL_VERSION ${_zlib_h_contents})
-
+    
 include(util)
-report_version(libz ${ZLIB_FULL_VERSION})
-  
+report_version(${PROJECT_NAME} ${ZLIB_FULL_VERSION})    
+
 if(MINGW)
     # This gets us DLL resource information when compiling on MinGW.
     if(NOT CMAKE_RC_COMPILER)
@@ -189,13 +191,19 @@ if(MINGW)
 endif(MINGW)
 
 if(BUILD_SHARED_LIBS)
-    add_library(zlib SHARED ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+    set(LIB_NAME zlib)
+    add_library(${LIB_NAME} SHARED ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+    set_target_properties(${LIB_NAME} PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
+    set_target_properties(${LIB_NAME} PROPERTIES SOVERSION 1)
 else()    
-    add_library(zlibstatic STATIC ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+    set(LIB_NAME zlibstatic)
+    add_library(${LIB_NAME} STATIC ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+    set_target_properties(${LIB_NAME} PROPERTIES SOVERSION 1)
 endif()    
 
-set_target_properties(zlib PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
-set_target_properties(zlib PROPERTIES SOVERSION 1)
+# todo: do we need some univesal cmake file for this?
+export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake)
+add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 
 if(NOT CYGWIN)
     # This property causes shared libraries on Linux to have the full version
@@ -205,43 +213,25 @@ if(NOT CYGWIN)
     #
     # This has no effect with MSVC, on that platform the version info for
     # the DLL comes from the resource file win32/zlib1.rc
-    set_target_properties(zlib PROPERTIES VERSION ${ZLIB_FULL_VERSION})
+    set_target_properties(${LIB_NAME} PROPERTIES VERSION ${ZLIB_FULL_VERSION})
 endif()
-
-set(LIB_NAME)
 
 if(UNIX)
     # On unix-like platforms the library is almost always called libz
-    if(BUILD_SHARED_LIBS)
-      set(LIB_NAME zlib)
-      set_target_properties(zlib PROPERTIES OUTPUT_NAME z)
-    else()
-      set(LIB_NAME zlibstatic)
-      set_target_properties(zlibstatic PROPERTIES OUTPUT_NAME z)
-    endif()
-    if(NOT APPLE)
-      set(LIB_NAME zlib)
-      set_target_properties(zlib PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${CMAKE_CURRENT_SOURCE_DIR}/zlib.map\"")
+    set_target_properties(${LIB_NAME} PROPERTIES OUTPUT_NAME z)
+    if(NOT APPLE AND BUILD_SHARED_LIBS)
+        set_target_properties(${LIB_NAME} PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${CMAKE_CURRENT_SOURCE_DIR}/zlib.map\"")
     endif()
 elseif(BUILD_SHARED_LIBS AND WIN32)
     # Creates zlib1.dll when building shared library version
-    set_target_properties(zlib PROPERTIES SUFFIX "1.dll")
-    set(LIB_NAME zlib)
+    set_target_properties(${LIB_NAME} PROPERTIES SUFFIX "1.dll")
 endif()
 
 if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
-    if(BUILD_SHARED_LIBS) 
-      install(TARGETS zlib
-        EXPORT ZLIBTargets
+    install(TARGETS ${LIB_NAME} 
         RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
         ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
         LIBRARY DESTINATION "${INSTALL_LIB_DIR}" )
-    else()
-      install(TARGETS zlibstatic
-        RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
-        ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
-        LIBRARY DESTINATION "${INSTALL_LIB_DIR}" )
-    endif()
 endif()
 if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
     install(FILES ${ZLIB_PUBLIC_HDRS} DESTINATION "${INSTALL_INC_DIR}")
@@ -253,55 +243,3 @@ if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
     install(FILES ${ZLIB_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
 endif()
 
-set(ZLIB_VERSION ${VERSION})
-
-if(WIN32 AND NOT CYGWIN)
-  set(DEF_INSTALL_CMAKE_DIR CMake)
-else()
-  set(DEF_INSTALL_CMAKE_DIR lib/CMake/ZLIB)
-endif()
-set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
-  "Installation directory for CMake files")
- 
-# Make relative paths absolute (needed later on)
-foreach(p LIB BIN INCLUDE CMAKE)
-  set(var INSTALL_${p}_DIR)
-  if(NOT IS_ABSOLUTE "${${var}}")
-    set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
-  endif()
-endforeach()
-
-if(CMAKE_BUILD_TYPE STREQUAL "")
-  set(CONFIG_TYPE "NOCONFIG")
-else()
-  string(TOUPPER ${CMAKE_BUILD_TYPE} CONFIG_TYPE)
-endif()
-
-export(TARGETS ${LIB_NAME}
-  FILE "${CMAKE_BINARY_DIR}/ZLIBTargets.cmake")
-
-# Create the ZLIBConfig.cmake and ZLIBConfigVersion files
-file(RELATIVE_PATH REL_INCLUDE_DIR "${INSTALL_CMAKE_DIR}"
-  "${INSTALL_INC_DIR}")
-
-# ... for the build tree
-set(CONF_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}")
-configure_file(ZLIBConfig.cmake.in
-  "${PROJECT_BINARY_DIR}/ZLIBConfig.cmake" @ONLY)
-
-# ... for the install tree
-set(CONF_INCLUDE_DIRS "\${ZLIB_CMAKE_DIR}/${REL_INCLUDE_DIR}")
-configure_file(ZLIBConfig.cmake.in
-  "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/ZLIBConfig.cmake" @ONLY)
-# ... for both
-configure_file(ZLIBConfigVersion.cmake.in
-  "${CMAKE_BINARY_DIR}/ZLIBConfigVersion.cmake" @ONLY)
- 
-# Install the ZLIBConfig.cmake and ZLIBConfigVersion.cmake
-install(FILES
-  "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/ZLIBConfig.cmake"
-  "${CMAKE_BINARY_DIR}/ZLIBConfigVersion.cmake"
-  DESTINATION "${INSTALL_CMAKE_DIR}" )
- 
-# Install the export set for use with the install-tree
-install(EXPORT ZLIBTargets DESTINATION "${INSTALL_CMAKE_DIR}")
