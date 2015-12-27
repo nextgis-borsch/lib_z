@@ -269,6 +269,11 @@ foreach(p LIB BIN INCLUDE CMAKE)
   endif()
 endforeach()
 
+if(CMAKE_BUILD_TYPE STREQUAL "")
+set(CONFIG_TYPE "NOCONFIG")
+else()
+  set(CONFIG_TYPE "${CMAKE_BUILD_TYPE}")
+endif()
 
 export(TARGETS ${LIB_NAME}
   FILE "${CMAKE_BINARY_DIR}/ZLIBTargets.cmake")
