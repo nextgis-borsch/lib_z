@@ -217,11 +217,13 @@ if(UNIX)
       set_target_properties(zlibstatic PROPERTIES OUTPUT_NAME z)
     endif()
     if(NOT APPLE)
+      set(LIB_NAME zlib)
       set_target_properties(zlib PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${CMAKE_CURRENT_SOURCE_DIR}/zlib.map\"")
     endif()
 elseif(BUILD_SHARED_LIBS AND WIN32)
     # Creates zlib1.dll when building shared library version
     set_target_properties(zlib PROPERTIES SUFFIX "1.dll")
+    set(LIB_NAME zlib1)
 endif()
 
 if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
