@@ -169,6 +169,9 @@ file(READ ${CMAKE_CURRENT_SOURCE_DIR}/zlib.h _zlib_h_contents)
 string(REGEX REPLACE ".*#define[ \t]+ZLIB_VERSION[ \t]+\"([-0-9A-Za-z.]+)\".*"
     "\\1" ZLIB_FULL_VERSION ${_zlib_h_contents})
 
+include(util)
+report_version(libz ${ZLIB_FULL_VERSION})
+  
 if(MINGW)
     # This gets us DLL resource information when compiling on MinGW.
     if(NOT CMAKE_RC_COMPILER)
