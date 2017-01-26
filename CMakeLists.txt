@@ -174,13 +174,10 @@ if(MSVC)
 	endif()
 endif()
 
-# parse the full version number from zlib.h and include in ZLIB_FULL_VERSION
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/zlib.h _zlib_h_contents)
-string(REGEX REPLACE ".*#define[ \t]+ZLIB_VERSION[ \t]+\"([-0-9A-Za-z.]+)\".*"
-    "\\1" ZLIB_FULL_VERSION ${_zlib_h_contents})
-    
 include(util)
-report_version(${PROJECT_NAME} ${ZLIB_FULL_VERSION})    
+# parse the full version number from zlib.h and include in ZLIB_FULL_VERSION    
+check_version(ZLIB_FULL_VERSION)
+report_version(${PROJECT_NAME} ${ZLIB_FULL_VERSION})
 
 if(MINGW)
     # This gets us DLL resource information when compiling on MinGW.
