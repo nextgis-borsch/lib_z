@@ -175,7 +175,7 @@ if(MSVC)
 endif()
 
 include(util)
-# parse the full version number from zlib.h and include in ZLIB_FULL_VERSION    
+# parse the full version number from zlib.h and include in ZLIB_FULL_VERSION
 check_version(ZLIB_FULL_VERSION)
 report_version(${PROJECT_NAME} ${ZLIB_FULL_VERSION})
 
@@ -196,14 +196,14 @@ if(MINGW)
 endif(MINGW)
 
 set(LIB_NAME ${PROJECT_NAME})
-if(BUILD_SHARED_LIBS)    
+if(BUILD_SHARED_LIBS)
     add_library(${LIB_NAME} SHARED ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
     set_target_properties(${LIB_NAME} PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
     set_target_properties(${LIB_NAME} PROPERTIES SOVERSION 1)
-else()    
+else()
     add_library(${LIB_NAME} STATIC ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
     set_target_properties(${LIB_NAME} PROPERTIES SOVERSION 1)
-endif()    
+endif()
 
 # todo: do we need some univesal cmake file for this?
 #export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake)
@@ -220,8 +220,7 @@ if (REGISTER_PACKAGE)
     configure_package_config_file(
         ${CMAKE_SOURCE_DIR}/cmake/PackageConfig.cmake.in
         ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_PACKAGE_NAME}Config.cmake
-        INSTALL_DESTINATION ${INSTALL_LIB_DIR}/cmake
-        PATH_VARS INSTALL_INC_DIR )
+    INSTALL_DESTINATION ${CMAKE_CURRENT_BINARY_DIR}  )
     write_basic_package_version_file(
         ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_PACKAGE_NAME}ConfigVersion.cmake
         VERSION ${VERSION}
@@ -255,7 +254,7 @@ elseif(BUILD_SHARED_LIBS AND WIN32)
 endif()
 
 if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
-    install(TARGETS ${LIB_NAME} 
+    install(TARGETS ${LIB_NAME}
         RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
         ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
         LIBRARY DESTINATION "${INSTALL_LIB_DIR}" )
@@ -269,4 +268,3 @@ endif()
 if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
     install(FILES ${ZLIB_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
 endif()
-
