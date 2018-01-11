@@ -1,31 +1,52 @@
 cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS ON)
 
-project(zlib C)
-
-set(VERSION "1.2.8")
-
-option(ASM686 "Enable building i686 assembly implementation")
-option(AMD64 "Enable building amd64 assembly implementation")
-
-include(GNUInstallDirs)
-
-set(INSTALL_BIN_DIR ${CMAKE_INSTALL_FULL_BINDIR} CACHE INTERNAL "Installation directory for executables" FORCE)
-set(INSTALL_LIB_DIR ${CMAKE_INSTALL_FULL_LIBDIR} CACHE INTERNAL "Installation directory for libraries" FORCE)
-set(INSTALL_INC_DIR ${CMAKE_INSTALL_FULL_INCLUDEDIR} CACHE INTERNAL "Installation directory for headers" FORCE)
-set(INSTALL_MAN_DIR ${CMAKE_INSTALL_FULL_MANDIR} CACHE INTERNAL "Installation directory for manual pages" FORCE)
-set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig" CACHE INTERNAL "Installation directory for pkgconfig (.pc) files" FORCE)
+project(zlib)
 
 # some init settings
 set(CMAKE_COLOR_MAKEFILE ON)
 # set path to additional CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
+option(ASM686 "Enable building i686 assembly implementation")
+option(AMD64 "Enable building amd64 assembly implementation")
+
+if(OSX_FRAMEWORK AND (BUILD_SHARED_LIBS OR BUILD_STATIC_LIBS))
+  message(FATAL_ERROR "Only OSX_FRAMEWORK key or any or both BUILD_SHARED_LIBS
+                       and BUILD_STATIC_LIBS keys are permitted")
+endif()
+
+if(OSX_FRAMEWORK)
+  set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/Library/Frameworks" CACHE INTERNAL "Installation directory for libraries" FORCE)
+  set(SKIP_INSTALL_EXPORT ON)
+  set(SKIP_INSTALL_HEADERS ON)
+  set(SKIP_INSTALL_FILES ON)
+  set(CMAKE_MACOSX_RPATH ON)
+else()
+    include(GNUInstallDirs)
+
+    set(INSTALL_BIN_DIR ${CMAKE_INSTALL_FULL_BINDIR} CACHE INTERNAL "Installation directory for executables" FORCE)
+    set(INSTALL_LIB_DIR ${CMAKE_INSTALL_FULL_LIBDIR} CACHE INTERNAL "Installation directory for libraries" FORCE)
+    set(INSTALL_INC_DIR ${CMAKE_INSTALL_FULL_INCLUDEDIR} CACHE INTERNAL "Installation directory for headers" FORCE)
+    set(INSTALL_MAN_DIR ${CMAKE_INSTALL_FULL_MANDIR} CACHE INTERNAL "Installation directory for manual pages" FORCE)
+    set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig" CACHE INTERNAL "Installation directory for pkgconfig (.pc) files" FORCE)
+endif()
+
+include(util)
+check_version(ZLIB_MAJOR_VERSION ZLIB_MINOR_VERSION ZLIB_REV_VERSION)
+set(VERSION ${ZLIB_MAJOR_VERSION}.${ZLIB_MINOR_VERSION}.${ZLIB_REV_VERSION})
+if(OSX_FRAMEWORK)
+    set(FRAMEWORK_VERSION "${ZLIB_MAJOR_VERSION}")
+endif()
+report_version(${PROJECT_NAME} ${VERSION})
+
 include(CheckTypeSize)
 include(CheckFunctionExists)
 include(CheckIncludeFile)
 include(CheckCSourceCompiles)
 enable_testing()
+
+configure_file(${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake.in ${CMAKE_BINARY_DIR}/uninstall.cmake IMMEDIATE @ONLY)
 
 check_include_file(sys/types.h HAVE_SYS_TYPES_H)
 check_include_file(stdint.h    HAVE_STDINT_H)
@@ -66,10 +87,6 @@ endif()
 #
 check_include_file(unistd.h Z_HAVE_UNISTD_H)
 
-if(CMAKE_GENERATOR_TOOLSET MATCHES "v([0-9]+)_xp")
-    add_definitions(-D_WIN32_WINNT=0x0501)
-endif()
-
 if(MSVC)
     set(CMAKE_DEBUG_POSTFIX "d")
     add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
@@ -90,13 +107,12 @@ if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
 endif()
 
 set(ZLIB_PC ${CMAKE_CURRENT_BINARY_DIR}/zlib.pc)
-configure_file( ${CMAKE_SOURCE_DIR}/cmake/zlib.pc.cmakein
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/zlib.pc.cmakein
 		${ZLIB_PC} @ONLY)
-configure_file(	${CMAKE_SOURCE_DIR}/cmake/zconf.h.cmakein
+configure_file(	${CMAKE_CURRENT_SOURCE_DIR}/zconf.h.cmakein
 		${CMAKE_CURRENT_BINARY_DIR}/zconf.h @ONLY)
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 
-configure_file(${CMAKE_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake IMMEDIATE @ONLY)
 
 #============================================================================
 # zlib
@@ -174,11 +190,6 @@ if(MSVC)
 	endif()
 endif()
 
-include(util)
-# parse the full version number from zlib.h and include in ZLIB_FULL_VERSION
-check_version(ZLIB_FULL_VERSION)
-report_version(${PROJECT_NAME} ${ZLIB_FULL_VERSION})
-
 if(MINGW)
     # This gets us DLL resource information when compiling on MinGW.
     if(NOT CMAKE_RC_COMPILER)
@@ -196,53 +207,52 @@ if(MINGW)
 endif(MINGW)
 
 set(LIB_NAME ${PROJECT_NAME})
+set(TARGETS ${LIB_NAME})
 if(BUILD_SHARED_LIBS)
     add_library(${LIB_NAME} SHARED ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
-    set_target_properties(${LIB_NAME} PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
-    set_target_properties(${LIB_NAME} PROPERTIES SOVERSION 1)
-else()
-    add_library(${LIB_NAME} STATIC ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
-    set_target_properties(${LIB_NAME} PROPERTIES SOVERSION 1)
-endif()
-
-# todo: do we need some univesal cmake file for this?
-#export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake)
-if (REGISTER_PACKAGE)
-    export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake)
-
-    set(EXPORT_PACKAGE_NAME ZLIB)
-    set(EXPORT_PACKAGE_NAME_UPPER ZLIB)
-    set(EXPORT_PACKAGE_LIB_NAME ${LIB_NAME})
-
-    export(PACKAGE ${EXPORT_PACKAGE_NAME})
-
-    include(CMakePackageConfigHelpers)
-    configure_package_config_file(
-        ${CMAKE_SOURCE_DIR}/cmake/PackageConfig.cmake.in
-        ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_PACKAGE_NAME}Config.cmake
-    INSTALL_DESTINATION ${CMAKE_CURRENT_BINARY_DIR}  )
-    write_basic_package_version_file(
-        ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_PACKAGE_NAME}ConfigVersion.cmake
+    set_target_properties (${LIB_NAME} PROPERTIES
         VERSION ${VERSION}
-        COMPATIBILITY AnyNewerVersion )
+        SOVERSION 1
+        DEFINE_SYMBOL ZLIB_DLL)
+        if(BUILD_STATIC_LIBS)
+            add_library(${LIB_NAME}static STATIC ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+            set(TARGETS ${TARGETS} ${LIB_NAME}static)
+            if(UNIX)
+                set_target_properties(${LIB_NAME}static PROPERTIES OUTPUT_NAME z)
+            endif()
+        endif()
+elseif(OSX_FRAMEWORK)
+    add_library(${LIB_NAME} SHARED ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS} zlib.3)
+    set_property(SOURCE zlib.3
+      PROPERTY MACOSX_PACKAGE_LOCATION Resources/man
+    )
+    set_target_properties(${LIB_NAME} PROPERTIES
+      FRAMEWORK TRUE
+      FRAMEWORK_VERSION ${FRAMEWORK_VERSION}
+      MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${VERSION}
+      MACOSX_FRAMEWORK_BUNDLE_VERSION ${VERSION}
+      MACOSX_FRAMEWORK_IDENTIFIER org.zlib.zlib
+      XCODE_ATTRIBUTE_INSTALL_PATH "@rpath"
+      PUBLIC_HEADER "${ZLIB_PUBLIC_HDRS}"
+      VERSION ${VERSION}
+      SOVERSION 1
+      )
 else()
-    export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake EXPORT_LINK_INTERFACE_LIBRARIES)
+    add_library(${LIB_NAME} STATIC ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
 endif()
-
-add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 
 if(NOT CYGWIN)
     # This property causes shared libraries on Linux to have the full version
     # encoded into their final filename.  We disable this on Cygwin because
-    # it causes cygz-${ZLIB_FULL_VERSION}.dll to be created when cygz.dll
+    # it causes cygz-${VERSION}.dll to be created when cygz.dll
     # seems to be the default.
     #
     # This has no effect with MSVC, on that platform the version info for
     # the DLL comes from the resource file win32/zlib1.rc
-    set_target_properties(${LIB_NAME} PROPERTIES VERSION ${ZLIB_FULL_VERSION})
+    set_target_properties(${LIB_NAME} PROPERTIES VERSION ${VERSION})
 endif()
 
-if(UNIX)
+if(UNIX AND NOT OSX_FRAMEWORK)
     # On unix-like platforms the library is almost always called libz
     set_target_properties(${LIB_NAME} PROPERTIES OUTPUT_NAME z)
     if(NOT APPLE AND BUILD_SHARED_LIBS)
@@ -254,10 +264,12 @@ elseif(BUILD_SHARED_LIBS AND WIN32)
 endif()
 
 if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
-    install(TARGETS ${LIB_NAME}
-        RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
-        ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
-        LIBRARY DESTINATION "${INSTALL_LIB_DIR}" )
+    install(TARGETS ${TARGETS}
+        EXPORT ${PROJECT_NAME}Targets
+        RUNTIME DESTINATION ${INSTALL_BIN_DIR}
+        LIBRARY DESTINATION ${INSTALL_LIB_DIR}
+        ARCHIVE DESTINATION ${INSTALL_LIB_DIR}
+        FRAMEWORK DESTINATION ${INSTALL_LIB_DIR} )
 endif()
 if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
     install(FILES ${ZLIB_PUBLIC_HDRS} DESTINATION "${INSTALL_INC_DIR}")
@@ -267,4 +279,32 @@ if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
 endif()
 if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
     install(FILES ${ZLIB_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
+endif()
+
+add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/uninstall.cmake)
+
+# TODO: Export package ============================================================
+# 1. In build tree package
+# 2. Install package
+
+#============================================================================
+# Example binaries
+#============================================================================
+
+add_executable(example test/example.c)
+target_link_libraries(example ${LIB_NAME})
+add_test(example example)
+
+add_executable(minigzip test/minigzip.c)
+target_link_libraries(minigzip ${LIB_NAME})
+
+if(HAVE_OFF64_T)
+    add_executable(example64 test/example.c)
+    target_link_libraries(example64 ${LIB_NAME})
+    set_target_properties(example64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
+    add_test(example64 example64)
+
+    add_executable(minigzip64 test/minigzip.c)
+    target_link_libraries(minigzip64 ${LIB_NAME})
+    set_target_properties(minigzip64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
 endif()

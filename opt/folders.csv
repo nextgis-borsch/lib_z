@@ -1,0 +1,8 @@
+,,,"c,ChangeLog,h,FAQ,INDEX,README,cmakein,map,3,"
+contrib/amd64,contrib/amd64,,S
+contrib/asm686,contrib/asm686,,S
+contrib/masmx64,contrib/masmx64,,"bat,asm,c,txt"
+contrib/masmx86,contrib/masmx86,,"bat,asm,txt"
+test,test,,c
+win32,win32,,"def,rc"
+old,,skip,

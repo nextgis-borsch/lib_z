@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, dmitry.baryshnikov@nexgis.com
 ################################################################################
-# Copyright (C) 2015, NextGIS <info@nextgis.com>
+# Copyright (C) 2015-2018, NextGIS <info@nextgis.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -24,18 +24,32 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-function(check_version version)
+function(check_version major minor rev)
 
-    # parse the full version number from zlib.h and include in ZLIB_FULL_VERSION
-    file(READ ${CMAKE_CURRENT_SOURCE_DIR}/zlib.h _zlib_h_contents)
-    string(REGEX REPLACE ".*#define[ \t]+ZLIB_VERSION[ \t]+\"([-0-9A-Za-z.]+)\".*"
-    "\\1" ZLIB_FULL_VERSION ${_zlib_h_contents})
+    set(VERSION_FILE ${CMAKE_CURRENT_SOURCE_DIR}/zlib.h)
 
-    set(${version} ${ZLIB_FULL_VERSION} PARENT_SCOPE)
+    file(READ ${VERSION_FILE} VERSION_H_CONTENTS)
+
+    string(REGEX MATCH "ZLIB_VER_MAJOR[ \t]+([0-9]+)"
+      ZLIB_VER_MAJOR ${VERSION_H_CONTENTS})
+    string (REGEX MATCH "([0-9]+)"
+      ZLIB_VER_MAJOR ${ZLIB_VER_MAJOR})
+    string(REGEX MATCH "ZLIB_VER_MINOR[ \t]+([0-9]+)"
+      ZLIB_VER_MINOR ${VERSION_H_CONTENTS})
+    string (REGEX MATCH "([0-9]+)"
+      ZLIB_VER_MINOR ${ZLIB_VER_MINOR})
+    string(REGEX MATCH "ZLIB_VER_REVISION[ \t]+([0-9]+)"
+      ZLIB_VER_REVISION ${VERSION_H_CONTENTS})
+    string (REGEX MATCH "([0-9]+)"
+      ZLIB_VER_REVISION ${ZLIB_VER_REVISION})
+
+    set(${major} ${ZLIB_VER_MAJOR} PARENT_SCOPE)
+    set(${minor} ${ZLIB_VER_MINOR} PARENT_SCOPE)
+    set(${rev} ${ZLIB_VER_REVISION} PARENT_SCOPE)
 
     # Store version string in file for installer needs
-    file(TIMESTAMP ${CMAKE_CURRENT_SOURCE_DIR}/zlib.h VERSION_DATETIME "%Y-%m-%d %H:%M:%S" UTC)
-    file(WRITE ${CMAKE_BINARY_DIR}/version.str "${ZLIB_FULL_VERSION}\n${VERSION_DATETIME}")
+    file(TIMESTAMP ${VERSION_FILE} VERSION_DATETIME "%Y-%m-%d %H:%M:%S" UTC)
+    file(WRITE ${CMAKE_BINARY_DIR}/version.str "${ZLIB_VER_MAJOR}.${ZLIB_VER_MINOR}.${ZLIB_VER_REVISION}\n${VERSION_DATETIME}")
 
 endfunction(check_version)
 
@@ -46,7 +60,6 @@ function(report_version name ver)
     set(BoldYellow  "${Esc}[1;33m")
     set(ColourReset "${Esc}[m")
 
-    message(STATUS "${BoldYellow}${name} version ${ver}${ColourReset}")
+    message("${BoldYellow}${name} version ${ver}${ColourReset}")
 
 endfunction()
-    
