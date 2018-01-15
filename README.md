@@ -5,4 +5,3 @@ This is [zlib](http://zlib.net/) library with modifications in build scripts to 
 dependencies of building C/C++ libraries and applications. NextGIS Borsch is based on [CMake](https://cmake.org/).
 
 [![Borsch compatible](https://img.shields.io/badge/Borsch-compatible-orange.svg?style=flat)](https://github.com/nextgis-borsch/borsch)
-
