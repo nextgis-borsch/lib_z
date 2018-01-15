@@ -332,8 +332,6 @@ endif()
 
 # Archiving ====================================================================
 
-get_compiler_version(COMPILER)
-
 set(CPACK_PACKAGE_NAME "${PACKAGE_NAME}")
 set(CPACK_PACKAGE_VENDOR "${PACKAGE_VENDOR}")
 set(CPACK_PACKAGE_VERSION "${VERSION}")
@@ -343,6 +341,8 @@ set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
 set(CPACK_GENERATOR "ZIP")
 set(CPACK_MONOLITHIC_INSTALL ON)
 set(CPACK_STRIP_FILES TRUE)
+
+# Get cpack zip archive name
 get_cpack_filename(PROJECT_CPACK_FILENAME)
 set(CPACK_PACKAGE_FILE_NAME ${PROJECT_CPACK_FILENAME})
 
