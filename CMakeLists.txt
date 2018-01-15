@@ -343,7 +343,7 @@ set(CPACK_MONOLITHIC_INSTALL ON)
 set(CPACK_STRIP_FILES TRUE)
 
 # Get cpack zip archive name
-get_cpack_filename(PROJECT_CPACK_FILENAME)
+get_cpack_filename(${VERSION} PROJECT_CPACK_FILENAME)
 set(CPACK_PACKAGE_FILE_NAME ${PROJECT_CPACK_FILENAME})
 
 include (CPack)

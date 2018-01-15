@@ -49,8 +49,8 @@ function(check_version major minor rev)
 
     # Store version string in file for installer needs
     file(TIMESTAMP ${VERSION_FILE} VERSION_DATETIME "%Y-%m-%d %H:%M:%S" UTC)
-    get_cpack_filename(PROJECT_CPACK_FILENAME)
     set(VERSION ${ZLIB_VER_MAJOR}.${ZLIB_VER_MINOR}.${ZLIB_VER_REVISION})
+    get_cpack_filename(${VERSION} PROJECT_CPACK_FILENAME)
     file(WRITE ${CMAKE_BINARY_DIR}/version.str "${VERSION}\n${VERSION_DATETIME}\n${PROJECT_CPACK_FILENAME}")
 
 endfunction(check_version)
@@ -66,9 +66,9 @@ function(report_version name ver)
 
 endfunction()
 
-function(get_cpack_filename name)
+function(get_cpack_filename ver name)
     get_compiler_version(COMPILER)
-    set(${name} ${PROJECT_NAME}-${VERSION}-${COMPILER} PARENT_SCOPE)
+    set(${name} ${PROJECT_NAME}-${ver}-${COMPILER} PARENT_SCOPE)
 endfunction()
 
 function(get_compiler_version ver)
