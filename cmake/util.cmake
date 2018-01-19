@@ -68,7 +68,11 @@ endfunction()
 
 function(get_cpack_filename ver name)
     get_compiler_version(COMPILER)
-    set(${name} ${PROJECT_NAME}-${ver}-${COMPILER} PARENT_SCOPE)
+    if(BUILD_SHARED_LIBS OR OSX_FRAMEWORK)
+        set(${name} ${PROJECT_NAME}-${ver}-${COMPILER} PARENT_SCOPE)
+    else()
+        set(${name} ${PROJECT_NAME}-${ver}-STATIC-${COMPILER} PARENT_SCOPE)
+    endif()
 endfunction()
 
 function(get_compiler_version ver)

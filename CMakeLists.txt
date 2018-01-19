@@ -346,7 +346,7 @@ set(CPACK_STRIP_FILES TRUE)
 get_cpack_filename(${VERSION} PROJECT_CPACK_FILENAME)
 set(CPACK_PACKAGE_FILE_NAME ${PROJECT_CPACK_FILENAME})
 
-include (CPack)
+include(CPack)
 
 #============================================================================
 # Example binaries
