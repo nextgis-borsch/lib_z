@@ -68,10 +68,14 @@ endfunction()
 
 function(get_cpack_filename ver name)
     get_compiler_version(COMPILER)
+    if(BUILD_STATIC_LIBS)
+        set(STATIC_PREFIX "static-")
+    endif()
+
     if(BUILD_SHARED_LIBS OR OSX_FRAMEWORK)
-        set(${name} ${PROJECT_NAME}-${ver}-${COMPILER} PARENT_SCOPE)
+        set(${name} ${PROJECT_NAME}-${STATIC_PREFIX}${ver}-${COMPILER} PARENT_SCOPE)
     else()
-        set(${name} ${PROJECT_NAME}-${ver}-STATIC-${COMPILER} PARENT_SCOPE)
+        set(${name} ${PROJECT_NAME}-${STATIC_PREFIX}${ver}-STATIC-${COMPILER} PARENT_SCOPE)
     endif()
 endfunction()
 
