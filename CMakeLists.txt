@@ -61,7 +61,7 @@ include(CheckIncludeFile)
 include(CheckCSourceCompiles)
 enable_testing()
 
-configure_file(${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake.in ${CMAKE_BINARY_DIR}/uninstall.cmake IMMEDIATE @ONLY)
+configure_file(${CMAKE_SOURCE_DIR}/cmake/borsch/cmake/uninstall.cmake.in ${CMAKE_BINARY_DIR}/uninstall.cmake IMMEDIATE @ONLY)
 
 check_include_file(sys/types.h HAVE_SYS_TYPES_H)
 check_include_file(stdint.h    HAVE_STDINT_H)
@@ -321,7 +321,7 @@ if(REGISTER_PACKAGE)
 endif()
 
 # Create the ZLIBConfig.cmake file
-configure_file(cmake/PackageConfig.cmake.in
+configure_file(cmake/borsch/cmake/PackageConfig.cmake.in
     ${PROJECT_BINARY_DIR}/${PACKAGE_UPPER_NAME}Config.cmake @ONLY)
 
 if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL)
