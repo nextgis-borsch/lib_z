@@ -2,7 +2,7 @@
 # to make it NextGIS Borsch compatible.
 # Copyright (C) 2015-2018, NextGIS <info@nextgis.com>
 
-cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.16.3 FATAL_ERROR)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS ON)
 
 project(zlib)
